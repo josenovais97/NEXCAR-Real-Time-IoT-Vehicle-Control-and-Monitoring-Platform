@@ -250,7 +250,7 @@
           const name=parts[0]||loc.address.city||loc.address.state||'';
           weatherEl.textContent=`${ic} ${name}, ${Math.round(w.current_weather.temperature)}°C`;
         }catch{showError('Meteorologia indisponível');}
-        const s=document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=AIzaSyCShnSRaq_bYJvLjqEiR6MskYe2D5py2TE&libraries=places&callback=initAll`; s.async=true; s.defer=true; s.onerror=()=>showError('Não foi possível carregar Google Maps'); document.head.appendChild(s);
+        const s=document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=APIKEY`; s.async=true; s.defer=true; s.onerror=()=>showError('Não foi possível carregar Google Maps'); document.head.appendChild(s);
       },()=>showError('Permita geolocalização'),{enableHighAccuracy:true,timeout:10000});
 
       // Chat logic with notifications & sorted order
