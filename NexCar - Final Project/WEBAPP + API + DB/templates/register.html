@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Registo – NEXCAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f4f4f9, #e0e5ec); color: #333; display: flex; flex-direction: column; align-items: center; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+    body.dark-mode { background: #2c2c2c; color: #ddd; }
+    header { background: linear-gradient(135deg, #007bff, #00aaff); color: white; padding: 20px; text-align: center; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; transition: background 0.3s; }
+    body.dark-mode header { background: #444; }
+    header h1 { font-size: 2.5em; margin: 0; }
+    header .theme-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; border-radius: 5px; padding: 5px 10px; color: white; cursor: pointer; font-size: 0.9em; transition: background 0.3s; }
+    header .theme-btn:hover { background: rgba(255,255,255,0.4); }
+    .login-wrapper { width: 100%; max-width: 400px; padding: 20px; margin-top: 60px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .login-card { background-color: white; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; transition: background 0.3s; }
+    body.dark-mode .login-card { background-color: #3a3a3a; }
+    .login-card h2 { text-align: center; color: #007bff; margin-bottom: 20px; }
+    form { display: flex; flex-direction: column; }
+    form input { padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; }
+    form button { padding: 12px; background: linear-gradient(135deg, #007bff, #00aaff); border: none; border-radius: 50px; color: white; font-size: 1em; cursor: pointer; margin-top: 10px; transition: background 0.3s; }
+    form button:hover { background: linear-gradient(135deg, #0056b3, #007bff); }
+    .link-login { text-align: center; margin-top: 15px; }
+    .link-login a { color: #007bff; text-decoration: none; }
+    .link-login a:hover { text-decoration: underline; }
+    .flash { margin-bottom: 15px; padding: 10px; border-radius: 5px; font-size: 0.9em; text-align: center; }
+    .flash.success { background-color: #d4edda; color: #155724; }
+    .flash.danger { background-color: #f8d7da; color: #721c24; }
+    .flash.info { background-color: #d1ecf1; color: #0c5460; }
+    footer { background-color: #333; color: white; padding: 10px; text-align: center; width: 100%; font-size: 0.9em; }
+    @media (max-width: 480px) { .login-wrapper { padding: 10px; } }
+  </style>
+</head>
+<body>
+  <header><h1>🏎️ NEXCAR 🏎️</h1></header>
+
+  <div class="login-wrapper">
+    <div class="login-card">
+      <h2>Criar conta</h2>
+      <form onsubmit="doRegisto(event)">
+        <input id="username" placeholder="Utilizador" required>
+        <input id="password" type="password" placeholder="Palavra-passe" required>
+        <button>Criar</button>
+      </form>
+      <div class="link-login">
+        <p>Já tem conta? <a href="/login">Entre aqui</a></p>
+      </div>
+    </div>
+  </div>
+
+  <footer><p>&copy; 2025 🏎️ NEXCAR</p></footer>
+
+  <script type="module">
+    import { saveToken, authHeader } from "/static/js/auth.js";
+
+    async function doRegisto(e) {
+      e.preventDefault();
+      const body = { username: username.value, password: password.value };
+
+      // registo
+      const r = await fetch("/api/v1/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) {
+        alert("Utilizador já existe");
+        return;
+      }
+
+      // login automático após registo
+      const login = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const { access_token } = await login.json();
+      saveToken(access_token);
+
+      // redireciona para cliente
+      window.location.href = "/cliente_landing";
+    }
+
+    window.doRegisto = doRegisto;
+  </script>
+</body>
+</html>

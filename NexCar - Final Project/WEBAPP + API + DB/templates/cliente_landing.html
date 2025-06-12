@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Área do Cliente – NEXCAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* CSS original com dark-mode para cards */
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin:0; padding:0;
+      background: linear-gradient(135deg, #f4f4f9, #e0e5ec); color:#333;
+      min-height:100vh; display:flex;flex-direction:column;
+      transition: background .3s, color .3s;
+    }
+    body.dark-mode { background: #2c2c2c; color: #ddd; }
+    header {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color:white; padding:20px; text-align:center;
+      position:relative; box-shadow:0 4px 6px rgba(0,0,0,.1);
+    }
+    body.dark-mode header { background: #333; }
+    header h1 { margin:0; font-size:2.5em; }
+    .theme-btn,#logoutBtn {
+      position:absolute; top:20px;
+      background: rgba(255,255,255,.2); border:none;
+      border-radius:5px; padding:5px 10px;
+      color:white; cursor:pointer; font-size:.9em;
+      transition: background .3s;
+    }
+    .theme-btn:hover,#logoutBtn:hover { background: rgba(255,255,255,.4); }
+    .theme-btn { left:20px; } #logoutBtn { right:20px; }
+    .container { flex:1; display:flex; flex-direction:column;
+      align-items:center; text-align:center; padding:20px;
+    }
+    #greeting { font-size:1.5em; margin-bottom:5px; }
+    p { margin:0 0 15px; }
+    #weather { font-size:1.1em; display:flex; align-items:center;
+      gap:6px; margin-bottom:20px;
+    }
+    .cards { display:flex; flex-direction:column; gap:20px;
+      align-items:stretch; width:100%; max-width:900px;
+    }
+    @media(min-width:768px){ .cards{ flex-direction:row; }}
+    .card { background:#fff; border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,.1);
+      overflow:hidden; transition:transform .3s,box-shadow .3s;
+      flex:1; display:flex; flex-direction:column;
+    }
+    .card:hover { transform:translateY(-4px);
+      box-shadow:0 8px 16px rgba(0,0,0,.15);
+    }
+    body.dark-mode .card { background:#2c2c2c; box-shadow:0 2px 8px rgba(0,0,0,.5); }
+    .card-header { background: linear-gradient(135deg, #007bff, #00aaff);
+      color:white; padding:10px 15px; font-weight:600;
+      display:flex; align-items:center; gap:8px;
+    }
+    body.dark-mode .card-header { background:#0056b3; }
+    .map-card #map { flex:1; width:100%; height:250px; }
+    .stations-card #stations {
+      padding:15px; text-align:left;
+      overflow-y:auto; flex:1;
+      background:#fff;
+    }
+    body.dark-mode .stations-card #stations { background:#333; color:#ddd; }
+    .stations-card ul{ list-style:none; padding:0; margin:0; }
+    .stations-card li{ margin-bottom:12px; }
+    .stations-card li:last-child{ margin-bottom:0; }
+    .stations-card strong{ color:#0056b3; }
+    .stations-card small{ color:#666; }
+    .btn-container{ margin-top:30px; }
+    .btn{ background: linear-gradient(135deg, #007bff, #00aaff);
+      color:white; padding:10px 25px; border:none;
+      border-radius:50px; font-size:1em;
+      text-decoration:none; transition:background .3s;
+    }
+    .btn:hover{ background: linear-gradient(135deg, #0056b3, #007bff); }
+    body.dark-mode .btn{ background: linear-gradient(135deg, #0056b3, #007bff); }
+    body.dark-mode .btn:hover{ background: linear-gradient(135deg, #004999, #0066cc); }
+    footer{ background:#333; color:white; text-align:center;
+      padding:10px; font-size:.9em;
+    }
+
+    /* Chat Widget */
+    .chat-widget {
+      position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+    }
+    .chat-toggle-btn {
+      position: relative;
+      background: #007bff; color: #fff;
+      border: none; border-radius: 50%;
+      width: 56px; height: 56px;
+      font-size: 24px; cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .notif-badge {
+      position: absolute; top: -5px; right: -5px;
+      background: #dc3545; color: #fff;
+      width: 20px; height: 20px;
+      border-radius: 50%; font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chat-panel {
+      width: 320px; max-height: 400px;
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: flex; flex-direction: column;
+      overflow: hidden; margin-bottom: 10px;
+    }
+    .chat-panel.hidden { display: none; }
+    .chat-header {
+      background: #007bff; color: #fff;
+      padding: 10px; font-weight:600;
+      display:flex; justify-content: space-between; align-items:center;
+    }
+    .chat-close-btn { cursor:pointer; font-size:20px; }
+    .chat-body {
+      flex:1; padding:10px; overflow-y:auto; background:#f9f9f9;
+      display:flex; flex-direction:column;
+    }
+    .bubble {
+      max-width:80%; margin:5px 0; padding:8px 12px;
+      border-radius:16px; line-height:1.4;
+    }
+    .user-bubble {
+      background:#007bff; color:#fff; align-self:flex-end;
+      border-bottom-right-radius:4px;
+    }
+    .admin-bubble {
+      background:#e0e0e0; color:#333; align-self:flex-start;
+      border-bottom-left-radius:4px;
+    }
+    .chat-footer {
+      display:flex; border-top:1px solid #ddd;
+    }
+    .chat-footer input {
+      flex:1; border:none; padding:10px; font-size:1rem;
+      outline:none;
+    }
+    .chat-footer button {
+      border:none; background:#007bff; color:#fff;
+      padding:0 16px; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Área do Cliente</h1>
+    <button class="theme-btn" id="toggleTheme">☀️</button>
+    <button id="logoutBtn">Logout</button>
+  </header>
+
+  <div class="container">
+    <h2 id="greeting">Olá!</h2>
+    <p>Aqui podes gerir os teus carros.</p>
+    <div id="weather">☀️ A obter meteorologia…</div>
+    <div class="cards">
+      <div class="card map-card">
+        <div class="card-header">🗺️ Mapa</div>
+        <div id="map"></div>
+      </div>
+      <div class="card stations-card">
+        <div class="card-header">⛽ Postos próximos</div>
+        <div id="stations">🔄 A procurar postos de combustível…</div>
+      </div>
+    </div>
+    <div class="btn-container">
+      <a class="btn" id="myAccount" href="#">Minha Conta</a>
+    </div>
+  </div>
+
+  <footer>&copy; 2025 🏎️ NEXCAR</footer>
+
+  <div class="chat-widget">
+    <div class="chat-panel hidden" id="chatPanel">
+      <div class="chat-header">
+        <span>Conversa Connosco</span>
+        <span class="chat-close-btn" id="chatClose">×</span>
+      </div>
+      <div class="chat-body" id="chatBody"></div>
+      <div class="chat-footer">
+        <input id="chatInput" type="text" placeholder="Escreve a tua pergunta…" />
+        <button id="chatSend">Enviar</button>
+      </div>
+    </div>
+    <button class="chat-toggle-btn" id="chatToggle">
+      💬<span class="notif-badge hidden" id="notifBadge">0</span>
+    </button>
+  </div>
+
+  <script type="module">
+    import { requireAuth, clearToken, authHeader } from '/static/js/auth.js';
+    document.addEventListener('DOMContentLoaded', () => {
+      requireAuth();
+      const logoutBtn = document.getElementById('logoutBtn');
+      const themeBtn = document.getElementById('toggleTheme');
+      const greetingEl = document.getElementById('greeting');
+      const myAccount = document.getElementById('myAccount');
+      const weatherEl = document.getElementById('weather');
+      const stationsEl = document.getElementById('stations');
+      const chatToggle = document.getElementById('chatToggle');
+      const chatPanel = document.getElementById('chatPanel');
+      const chatClose = document.getElementById('chatClose');
+      const chatBody = document.getElementById('chatBody');
+      const chatInput = document.getElementById('chatInput');
+      const chatSend = document.getElementById('chatSend');
+      const notifBadge = document.getElementById('notifBadge');
+
+      // Greeting & auth
+      (async () => {
+        try {
+          const res = await fetch('/api/v1/me', { headers: authHeader() });
+          if (!res.ok) throw new Error();
+          const u = await res.json();
+          greetingEl.textContent = `Olá, ${u.username||u.id}!`;
+        } catch {
+          clearToken(); location.href = '/login';
+        }
+      })();
+      logoutBtn.onclick = () => { clearToken(); location.href = '/login'; };
+      myAccount.href = '/minha_conta';
+      themeBtn.onclick = () => {
+        document.body.classList.toggle('dark-mode');
+        themeBtn.textContent = document.body.classList.contains('dark-mode') ? '🌙' : '☀️';
+      };
+
+      // Geolocation & map
+      let userLat=null, userLng=null;
+      function showError(msg){ weatherEl.textContent='❌ '+msg; stationsEl.innerHTML=`<p>❌ ${msg}</p>`; }
+      window.initAll = () => {
+        if(userLat===null) return;
+        const map=new google.maps.Map(document.getElementById('map'),{center:{lat:userLat,lng:userLng},zoom:14});
+        new google.maps.Marker({position:{lat:userLat,lng:userLng},map,title:'Tu estás aqui'});
+        new google.maps.TrafficLayer().setMap(map);
+        new google.maps.places.PlacesService(map).nearbySearch({location:{lat:userLat,lng:userLng},radius:3000,type:'gas_station'},(places,status)=>{
+          if(status===google.maps.places.PlacesServiceStatus.OK){
+            const list=places.slice(0,5).map(p=>{ new google.maps.Marker({position:p.geometry.location,map,icon:{url:'https://maps.google.com/mapfiles/kml/shapes/gas_stations.png',scaledSize:new google.maps.Size(24,24)},title:p.name}); return `<li><strong>${p.name}</strong><br><small>${p.vicinity}</small></li>`; }).join('');
+            stationsEl.innerHTML=`<ul>${list}</ul>`;
+          } else showError('Nenhum posto encontrado');
+        });
+      };
+      navigator.geolocation.getCurrentPosition(async({coords})=>{
+        userLat=coords.latitude; userLng=coords.longitude;
+        try{
+          const w=await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLat}&longitude=${userLng}&current_weather=true&timezone=auto`)).json();
+          const c=w.current_weather.weathercode;
+          const ic=c===0?'☀️':c<4?'🌤️':c<45?'☁️':c<51?'🌫️':c<68?'🌧️':c<78?'❄️':'⛈️';
+          const loc=await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&accept-language=pt`)).json();
+          const parts=[loc.address.road,loc.address.neighbourhood,loc.address.suburb,loc.address.village,loc.address.town].filter(Boolean);
+          const name=parts[0]||loc.address.city||loc.address.state||'';
+          weatherEl.textContent=`${ic} ${name}, ${Math.round(w.current_weather.temperature)}°C`;
+        }catch{showError('Meteorologia indisponível');}
+        const s=document.createElement('script'); s.src=`https://maps.googleapis.com/maps/api/js?key=AIzaSyCShnSRaq_bYJvLjqEiR6MskYe2D5py2TE&libraries=places&callback=initAll`; s.async=true; s.defer=true; s.onerror=()=>showError('Não foi possível carregar Google Maps'); document.head.appendChild(s);
+      },()=>showError('Permita geolocalização'),{enableHighAccuracy:true,timeout:10000});
+
+      // Chat logic with notifications & sorted order
+      async function loadChat(){
+        try{
+          const qs=await (await fetch('/api/v1/questions',{headers:authHeader()})).json();
+          // sort by created_at ascending
+          qs.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+          chatBody.innerHTML='';
+          let unread=0;
+          qs.forEach(m=>{
+            const div=document.createElement('div');
+            div.className='bubble user-bubble'; div.textContent=m.question; chatBody.appendChild(div);
+            if(m.response){ const d2=document.createElement('div'); d2.className='bubble admin-bubble'; d2.textContent=m.response; chatBody.appendChild(d2); } else unread++;
+          });
+          // badge
+          if(unread>0){ notifBadge.textContent=unread; notifBadge.classList.remove('hidden'); } else notifBadge.classList.add('hidden');
+          chatBody.scrollTop=chatBody.scrollHeight;
+        }catch{}
+      }
+      chatToggle.onclick=()=>{ chatPanel.classList.toggle('hidden'); if(!chatPanel.classList.contains('hidden')) loadChat(); };
+      chatClose.onclick=()=>chatPanel.classList.add('hidden');
+      chatSend.onclick=async()=>{
+        const txt=chatInput.value.trim(); if(!txt) return;
+        await fetch('/api/v1/questions',{method:'POST',headers:{'Content-Type':'application/json',...authHeader()},body:JSON.stringify({question:txt})});
+        chatInput.value=''; loadChat();
+      };
+    });
+  </script>
+</body>
+</html>

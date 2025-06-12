@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Minha Conta – NEXCAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #f4f4f9, #e0e5ec);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+    /* Botão VOLTAR */
+    .back-btn {
+      position: absolute;
+      top: 50%;
+      left: 20px;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 5px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-decoration: none;
+    }
+    .back-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    /* Botão LOGOUT */
+    .logout-btn {
+      position: absolute;
+      top: 50%;
+      right: 20px;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 5px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-decoration: none;
+    }
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+
+    .container {
+      flex: 1;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    #loader {
+      text-align: center;
+      margin: 2rem 0;
+      font-size: 1.1rem;
+      display: none;
+    }
+    form.add-car-form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    form.add-car-form input {
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+    }
+    form.add-car-form button {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      border: none;
+      border-radius: 50px;
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin-top: 10px;
+    }
+    form.add-car-form button:hover {
+      background: linear-gradient(135deg, #0056b3, #007bff);
+    }
+    .table-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+    .table-card table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+    .table-card thead th {
+      background: #007bff;
+      color: #fff;
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 600;
+    }
+    .table-card tbody tr:nth-child(odd) {
+      background: #f9f9f9;
+    }
+    .table-card tbody tr:hover {
+      background: #e9f4ff;
+      transform: translateY(-1px);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .table-card td {
+      padding: 12px 16px;
+      border-top: 1px solid #eee;
+    }
+    .action-btn {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      margin-right: 5px;
+    }
+    .action-btn:hover {
+      opacity: 0.9;
+    }
+    .remove-btn {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.3s;
+      margin-left: 5px;
+    }
+    .remove-btn:hover {
+      opacity: 0.9;
+    }
+    #msg {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      color: #666;
+    }
+    footer {
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back-btn" href="{{ url_for('cliente_landing_page') }}">Voltar</a>
+    <h1>Minha Conta</h1>
+    <a id="logoutBtn" class="logout-btn" href="#">Logout</a>
+  </header>
+
+  <div class="container">
+    <div id="loader">⏳ a carregar…</div>
+
+    <h2>Adicionar Carro</h2>
+    <form id="addForm" class="add-car-form">
+      <input id="novoNome" placeholder="Nome do Carro" required>
+      <button type="submit">Adicionar</button>
+    </form>
+
+    <h2>Meus Carros</h2>
+    <div class="table-card">
+      <table id="tbl">
+        <thead>
+          <tr><th>ID</th><th>Nome</th><th>Ação</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p id="msg"></p>
+  </div>
+
+  <footer>&copy; 2025 🏎️ NEXCAR</footer>
+
+  <script type="module">
+    import { authHeader, requireAuth, clearToken } from "/static/js/auth.js";
+    requireAuth();
+
+    const loader = document.getElementById('loader');
+    const tbl = document.getElementById('tbl');
+    const msg = document.getElementById('msg');
+    const addForm = document.getElementById('addForm');
+    const novoNome = document.getElementById('novoNome');
+
+    document.getElementById('logoutBtn').onclick = () => { clearToken(); location.href = '/login'; };
+
+    async function carregar() {
+      loader.style.display = '';
+      const r = await fetch('/api/v1/cars', { headers: authHeader() });
+      const cars = await r.json();
+      const tbody = tbl.querySelector('tbody');
+      tbody.innerHTML = '';
+
+      if (cars.length) {
+        tbl.style.display = '';
+        msg.style.display = 'none';
+        cars.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${c.id}</td>
+            <td>${c.name}</td>
+            <td>
+              <a class="action-btn" href="/carro/${c.id}">Dashboard</a>
+              <button class="remove-btn" onclick="delCar(${c.id})">Remover</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      } else {
+        tbl.style.display = 'none';
+        msg.style.display = '';
+        msg.textContent = 'Nenhum carro registado ainda.';
+      }
+      loader.style.display = 'none';
+    }
+
+    async function addCar(e) {
+      e.preventDefault();
+      const nome = novoNome.value.trim();
+      if (!nome) return;
+      await fetch('/api/v1/cars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
+        body: JSON.stringify({ name: nome })
+      });
+      novoNome.value = '';
+      carregar();
+    }
+
+    async function delCar(id) {
+      await fetch(`/api/v1/cars/${id}`, { method: 'DELETE', headers: authHeader() });
+      carregar();
+    }
+
+    window.delCar = delCar;
+    addForm.addEventListener('submit', addCar);
+    carregar();
+  </script>
+</body>
+</html>

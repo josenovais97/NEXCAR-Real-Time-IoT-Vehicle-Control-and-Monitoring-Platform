@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Carro – NEXCAR</title>
+
+  <!-- Fontes + bibliotecas -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    /* ======= Estilos base ======= */
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #f4f4f9, #e0e5ec);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+    header h1 { margin: 0; font-size: 2.5em; }
+    .back-btn, .logout-btn, .compare-btn {
+      position: absolute; top: 20px;
+      background: rgba(255,255,255,0.2); border: none; border-radius: 5px;
+      padding: 5px 10px; font-size: 0.9em; color: #fff; cursor: pointer;
+      text-decoration: none;
+    }
+    .back-btn { left: 20px; }
+    .compare-btn { right: 110px; }
+    .logout-btn { right: 20px; }
+    .back-btn:hover, .logout-btn:hover, .compare-btn:hover { background: rgba(255,255,255,0.4); }
+
+    /* ======= Filtros ======= */
+    .filters { text-align: center; margin: 15px auto; }
+    .period-buttons {
+      display: inline-flex; border-radius: 8px; overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .period-btn {
+      padding: 8px 16px; border: none; background: #fff;
+      color: #007bff; font-size: 0.95em; font-weight: 500;
+      cursor: pointer; transition: 0.3s;
+    }
+    .period-btn:not(:last-child) { border-right: 1px solid #e0e0e0; }
+    .period-btn.active { background: linear-gradient(135deg,#007bff,#00aaff); color:#fff; }
+    .custom-date {
+      margin-left:12px; padding:8px 12px; border:1px solid #ccc;
+      border-radius:5px; font-size:0.95em; display:none;
+    }
+
+    /* ======= Grids & Cards ======= */
+    .container-main {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:20px; padding:20px;
+    }
+    .container-events {
+      display:grid; grid-template-columns:repeat(4,1fr);
+      gap:20px; padding:0 20px 20px;
+    }
+    .card {
+      background:#fff; border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+      padding:20px; position:relative; cursor:pointer; transition:0.2s;
+    }
+    .card:hover {
+      transform:translateY(-5px);
+      box-shadow:0 6px 16px rgba(0,0,0,0.15);
+    }
+    .card h3 {
+      margin:0 0 15px; font-size:1.2em; font-weight:600; color:#007bff;
+    }
+    .card canvas { width:100%; height:calc(100% - 40px); }
+    .badge {
+      display:none; position:absolute; top:10px; right:10px;
+      background:#dc3545; color:#fff; font-size:0.8em;
+      border-radius:12px; padding:3px 8px;
+    }
+
+    /* ======= Botões ======= */
+    .btn-container { text-align:center; margin:20px 0; }
+    .btn {
+      background:linear-gradient(135deg,#007bff,#00aaff);
+      color:#fff; padding:10px 25px; border:none;
+      border-radius:50px; font-size:1em; cursor:pointer;
+      transition:0.3s; text-decoration:none;
+    }
+    .btn:hover { background:linear-gradient(135deg,#0056b3,#007bff); }
+
+    footer {
+      background:#333; color:#fff; text-align:center;
+      padding:10px; font-size:0.9em; margin-top:auto;
+    }
+
+    /* ======= Modais ======= */
+    .modal {
+      display:none; position:fixed; top:0; left:0;
+      width:100%; height:100%; background:rgba(0,0,0,0.4);
+      justify-content:center; align-items:center; padding:20px;
+    }
+    .modal-content {
+      background:#fff; border-radius:10px; padding:20px;
+      width:100%; max-width:800px; max-height:90vh;
+      overflow-y:auto; position:relative;
+    }
+    .close {
+      position:absolute; top:10px; right:15px;
+      font-size:1.5em; cursor:pointer; color:#333;
+    }
+    .select-wrapper { margin-bottom:15px; }
+    #carSearch {
+      width:100%; padding:8px; border:1px solid #ccc;
+      border-radius:5px; font-size:0.95em; margin-bottom:10px;
+    }
+    #carSelect {
+      width:100%; padding:8px; border:1px solid #ccc;
+      border-radius:5px; font-size:0.95em;
+    }
+
+    /* ======= Toast ======= */
+    .toast {
+      position:fixed; bottom:30px; right:30px;
+      padding:12px 20px; background:#dc3545; color:#fff;
+      border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+      z-index:9999; font-weight:600;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back-btn" href="/minha_conta">← Voltar</a>
+    <h1>Dashboard: {{ car.name }}</h1>
+    <a class="compare-btn" id="compareBtn" href="#">Comparar</a>
+    <a class="logout-btn" id="logoutBtn" href="#">Logout</a>
+  </header>
+
+  <!-- Filtros -->
+  <div class="filters">
+    <label>Período:</label>
+    <div class="period-buttons">
+      <button class="period-btn active" data-period="today">Hoje</button>
+      <button class="period-btn" data-period="7">7 dias</button>
+      <button class="period-btn" data-period="30">30 dias</button>
+      <button class="period-btn" data-period="custom">Personalizado</button>
+    </div>
+    <input type="date" id="customStartDate" class="custom-date" placeholder="Data Início" />
+    <input type="date" id="customEndDate" class="custom-date" placeholder="Data Fim" />
+  </div>
+
+  <!-- Gráficos principais -->
+  <div class="container-main">
+    <div class="card" id="card-temp"><h3>🌡️ Temperatura Cº</h3><canvas id="tempChart"></canvas></div>
+    <div class="card" id="card-humidity"><h3>💧 Humidade %</h3><canvas id="humidityChart"></canvas></div>
+    <div class="card" id="card-distance"><h3>📏 Distância cm</h3><canvas id="distanceChart"></canvas></div>
+  </div>
+
+  <!-- Eventos -->
+  <div class="container-events">
+    <div class="card" id="card-fire"><h3>🔥 Fogo</h3><div id="fireStats"></div></div>
+    <div class="card" id="card-collision"><h3>🚨 Colisão</h3><div id="collisionStats"></div></div>
+    <div class="card" id="card-rain"><h3>🌧️ Chuva</h3><div id="rainStats"></div></div>
+    <div class="card" id="card-movement"><h3>🏃 Movimento</h3><div id="movementStats"></div></div>
+  </div>
+
+  <div class="btn-container">
+    <button class="btn" id="dlCSV">Download CSV</button>
+    <button class="btn" id="exportPDF">Exportar PDF</button>
+  </div>
+
+  <!-- Modal Estatísticas -->
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="statsClose">&times;</span>
+      <h2 id="statsTitle"></h2>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+
+  <!-- Modal Comparação -->
+  <div id="compareModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="compareClose">&times;</span>
+      <h2>Comparação de Carros</h2>
+      <div class="select-wrapper">
+        <label for="carSearch"><strong>Buscar carro para comparar com {{ car.name }}:</strong></label>
+        <input type="text" id="carSearch" placeholder="Digite para buscar..." />
+        <select id="carSelect"></select>
+      </div>
+      <div style="display:grid;gap:25px;">
+        <canvas id="compareTemp"></canvas>
+        <canvas id="compareHumidity"></canvas>
+        <canvas id="compareDistance"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <footer>&copy; 2025 🏎️ NEXCAR</footer>
+
+  <script type="module">
+    import { authHeader, requireAuth, clearToken } from "/static/js/auth.js";
+    requireAuth();
+
+    // Ajusta botão “Voltar” conforme o role
+    const backBtn = document.querySelector(".back-btn");
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/me", { headers: authHeader() });
+        if (!res.ok) throw new Error();
+        const user = await res.json();
+        backBtn.href = user.role === "admin" ? "/admin_carros" : "/minha_conta";
+      } catch (e) {
+        console.warn("Não foi possível obter role:", e);
+      }
+    })();
+
+    // Logout
+    document.getElementById("logoutBtn").onclick = () => {
+      clearToken();
+      window.location.href = "/login";
+    };
+
+    /* ===================== CONFIG ===================== */
+    const API_SENSORS = id => `/api/v1/cars/${id}/sensors`;
+    const API_CARS    = "/api/v1/cars";
+    const carId = {{ car.id }};
+
+    /* ===================== STATE ===================== */
+    let rawData       = [];
+    let filteredData  = [];
+    let selectedPeriod = "today";
+    let allCars       = [];
+
+    /* ===================== SOCKET.IO ===================== */
+    const socket = (typeof io !== "undefined") ? io() : { on: () => {}, emit: () => {} };
+    socket.on("connect", () => console.log("🔌 Socket.IO conectado"));
+    socket.on("connect_error", err => console.error("❌ Socket.IO erro", err));
+
+    function toast(txt, ms = 4000) {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.textContent = txt;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), ms);
+    }
+    function blink(el) {
+      if (!el) return;
+      el.animate(
+        [{ boxShadow: "0 0 12px 4px #ff3b3b" }, { boxShadow: "none" }],
+        { duration: 1000, iterations: 3, easing: "ease-in-out" }
+      );
+    }
+    function raiseAlert(msg, cardId) {
+      toast(msg);
+      blink(document.getElementById(cardId));
+    }
+
+    socket.on("sensor_update", data => {
+      if (+data.car_id !== carId) return;
+      rawData.push(data);
+      applyFilter();
+      renderEvents(filteredData);
+      if (data.fire === 1)    raiseAlert("🔥 Incêndio detectado!", "card-fire");
+      if (data.movement === 1) raiseAlert("🏃 Movimento detectado!", "card-movement");
+    });
+
+    setInterval(fetchAndRender, 10000);
+
+    /* ===================== CSV / PDF ===================== */
+    document.getElementById("dlCSV").onclick = () => {
+      const header = "time,temperature,humidity,distance,fire,colisao,rain,movement";
+      const rows = rawData.map(o =>
+        [o.time,o.temperature,o.humidity,o.distance,o.fire,o.colisao,o.rain,o.movement].join(",")
+      );
+      const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `car_${carId}_data.csv`;
+      a.click();
+    };
+
+    const { jsPDF } = window.jspdf || {};
+    document.getElementById("exportPDF").onclick = () => {
+      if (!jsPDF) return alert("jsPDF não disponível");
+      const pdf = new jsPDF({ orientation: "landscape" });
+      pdf.setFontSize(18);
+      pdf.text(`Dashboard – {{ car.name }}`, 10, 10);
+      const charts = [
+        { id: "tempChart",     title: "Temperatura Cº", y: 20 },
+        { id: "humidityChart", title: "Humidade %",    y: 90 },
+        { id: "distanceChart", title: "Distância cm",   y: 160 }
+      ];
+      charts.forEach(c => {
+        pdf.setFontSize(12);
+        pdf.text(c.title, 10, c.y - 4);
+        const img = document.getElementById(c.id).toDataURL("image/png");
+        pdf.addImage(img, "PNG", 10, c.y, 90, 50);
+      });
+      pdf.save(`car_${carId}_dashboard.pdf`);
+    };
+
+    /* ===================== PERÍODO ===================== */
+    document.querySelectorAll(".period-btn").forEach(btn =>
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedPeriod = btn.dataset.period;
+
+        const start = document.getElementById("customStartDate");
+        const end   = document.getElementById("customEndDate");
+        const showCustom = selectedPeriod === "custom";
+        start.style.display = showCustom ? "inline-block" : "none";
+        end.style.display   = showCustom ? "inline-block" : "none";
+
+        fetchAndRender();
+      })
+    );
+    document.getElementById("customStartDate").addEventListener("change", applyFilter);
+    document.getElementById("customEndDate").addEventListener("change", applyFilter);
+
+    function filterData(arr) {
+      let data = [...arr];
+      const now = new Date();
+
+      if (selectedPeriod === "today") {
+        data = data.filter(o => new Date(o.time).toDateString() === now.toDateString());
+
+      } else if (selectedPeriod === "7" || selectedPeriod === "30") {
+        const cutoff = new Date(Date.now() - parseInt(selectedPeriod) * 86400000);
+        data = data.filter(o => new Date(o.time) >= cutoff);
+
+      } else if (selectedPeriod === "custom") {
+        const start = document.getElementById("customStartDate").value;
+        const end   = document.getElementById("customEndDate").value;
+        if (start) {
+          const d1 = new Date(start);
+          let d2 = end ? new Date(end) : new Date(start);
+          d2.setHours(23, 59, 59, 999);
+          data = data.filter(o => {
+            const t = new Date(o.time);
+            return t >= d1 && t <= d2;
+          });
+        }
+      }
+      return data;
+    }
+
+    /* ===================== CHARTS PRINCIPAIS ===================== */
+    const ctxT = document.getElementById("tempChart").getContext("2d");
+    const ctxH = document.getElementById("humidityChart").getContext("2d");
+    const ctxD = document.getElementById("distanceChart").getContext("2d");
+    let chartT, chartH, chartD;
+
+    function renderCharts(data) {
+      chartT?.destroy(); chartH?.destroy(); chartD?.destroy();
+      const labels = data.map(i => new Date(i.time).toLocaleString());
+      const opts = { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } };
+
+      chartT = new Chart(ctxT, { type: "line",
+        data: { labels, datasets: [{ data: data.map(i => i.temperature), fill: false, tension: 0.3 }] }, options: opts });
+      chartH = new Chart(ctxH, { type: "line",
+        data: { labels, datasets: [{ data: data.map(i => i.humidity),    fill: false, tension: 0.3 }] }, options: opts });
+      chartD = new Chart(ctxD, { type: "line",
+        data: { labels, datasets: [{ data: data.map(i => i.distance),    fill: false, tension: 0.3 }] }, options: opts });
+    }
+
+    /* ===================== EVENTOS ===================== */
+    function renderEvents(data) {
+      const mapping = [
+        { key: "fire",     statsEl: "fireStats"     },
+        { key: "colisao",  statsEl: "collisionStats" },
+        { key: "rain",     statsEl: "rainStats"     },
+        { key: "movement", statsEl: "movementStats" }
+      ];
+      mapping.forEach(({ key, statsEl }) => {
+        const el = document.getElementById(statsEl);
+        const arr = data.filter(o => o[key] === 1).sort((a,b)=>new Date(b.time)-new Date(a.time));
+        if (arr.length) {
+          const last = arr[0];
+          el.innerHTML = `<p><strong>Total:</strong> ${arr.length}</p><p><strong>Último:</strong> ${new Date(last.time).toLocaleString()}</p>`;
+        } else {
+          el.innerHTML = "<p>Nenhum evento registrado.</p>";
+        }
+      });
+    }
+
+    function applyFilter() {
+      filteredData = filterData(rawData);
+      renderCharts(filteredData);
+      renderEvents(filteredData);
+    }
+
+    async function fetchAndRender() {
+      rawData = await fetch(API_SENSORS(carId), { headers: authHeader() }).then(r=>r.json());
+      applyFilter();
+    }
+    fetchAndRender();
+
+    /* ===================== ESTATÍSTICAS ===================== */
+    document.getElementById("card-temp"    ).onclick = () => showStats("🌡️ Temperatura Cº", filteredData.map(o=>o.temperature));
+    document.getElementById("card-humidity").onclick = () => showStats("💧 Humidade %",     filteredData.map(o=>o.humidity));
+    document.getElementById("card-distance").onclick = () => showStats("📏 Distância cm",   filteredData.map(o=>o.distance));
+
+    const statsModal   = document.getElementById("statsModal");
+    const statsClose   = document.getElementById("statsClose");
+    const statsTitle   = document.getElementById("statsTitle");
+    const statsContent = document.getElementById("statsContent");
+    statsClose.onclick = () => statsModal.style.display = "none";
+    window.addEventListener("click", e => { if (e.target===statsModal) statsModal.style.display="none"; });
+
+    function showStats(title, arr) {
+      if (!arr.length) {
+        statsContent.innerHTML = "<p>Sem dados.</p>";
+      } else {
+        const avg = (arr.reduce((s,v)=>s+v,0)/arr.length).toFixed(2);
+        const min = Math.min(...arr).toFixed(2);
+        const max = Math.max(...arr).toFixed(2);
+        statsContent.innerHTML =
+          `<p><strong>Média:</strong> ${avg}</p><p><strong>Mínimo:</strong> ${min}</p><p><strong>Máximo:</strong> ${max}</p><p><strong>Registros:</strong> ${arr.length}</p>`;
+      }
+      statsTitle.textContent = title;
+      statsModal.style.display = "flex";
+    }
+
+    /* ===================== COMPARAÇÃO ===================== */
+    let chartCompareT, chartCompareH, chartCompareD;
+    const compareModal = document.getElementById("compareModal");
+    const carSelectEl  = document.getElementById("carSelect");
+    const carSearch    = document.getElementById("carSearch");
+
+    document.getElementById("compareBtn").onclick = async e => {
+      e.preventDefault();
+      if (!allCars.length) {
+        allCars = await fetch(API_CARS, { headers: authHeader() }).then(r => r.json());
+        populateCarOptions(allCars);
+      }
+      compareModal.style.display = "flex";
+    };
+    function populateCarOptions(list) {
+      carSelectEl.innerHTML = "";
+      list.filter(c => c.id !== carId).forEach(c => {
+        carSelectEl.add(new Option(c.name, c.id));
+      });
+    }
+    carSearch.addEventListener("input", () => {
+      const term = carSearch.value.toLowerCase();
+      const filtered = allCars.filter(c => c.name.toLowerCase().includes(term));
+      populateCarOptions(filtered);
+    });
+    document.getElementById("compareClose").onclick = () => compareModal.style.display = "none";
+    window.addEventListener("click", e => { if (e.target === compareModal) compareModal.style.display = "none"; });
+    carSelectEl.onchange = () => runComparison(carSelectEl.value);
+
+    async function runComparison(otherId) {
+      if (!otherId) return;
+
+      const [a, b] = await Promise.all([
+        fetch(API_SENSORS(carId),  { headers: authHeader() }).then(r => r.json()),
+        fetch(API_SENSORS(otherId),{ headers: authHeader() }).then(r => r.json())
+      ]);
+      if (!a.length || !b.length) return alert("Sem dados para comparar");
+
+      const filteredA = filterData(a);
+      const filteredB = filterData(b);
+
+      const labels = filteredA.map(i => new Date(i.time).toLocaleString());
+      const otherCar = allCars.find(c => c.id == otherId);
+      const otherName = otherCar ? otherCar.name : `Carro ${otherId}`;
+
+      const optsCompare = { responsive: true, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true } } };
+
+      // Temperatura
+      chartCompareT?.destroy();
+      chartCompareT = new Chart(
+        document.getElementById("compareTemp").getContext("2d"),
+        {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "{{ car.name }}", data: filteredA.map(i => i.temperature), fill: false, tension: 0.3 },
+              { label: otherName,        data: filteredB.map(i => i.temperature), fill: false, tension: 0.3 }
+            ]
+          },
+          options: optsCompare
+        }
+      );
+      // Humidade
+      chartCompareH?.destroy();
+      chartCompareH = new Chart(
+        document.getElementById("compareHumidity").getContext("2d"),
+        {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "{{ car.name }}", data: filteredA.map(i => i.humidity), fill: false, tension: 0.3 },
+              { label: otherName,        data: filteredB.map(i => i.humidity), fill: false, tension: 0.3 }
+            ]
+          },
+          options: optsCompare
+        }
+      );
+      // Distância
+      chartCompareD?.destroy();
+      chartCompareD = new Chart(
+        document.getElementById("compareDistance").getContext("2d"),
+        {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "{{ car.name }}", data: filteredA.map(i => i.distance), fill: false, tension: 0.3 },
+              { label: otherName,        data: filteredB.map(i => i.distance), fill: false, tension: 0.3 }
+            ]
+          },
+          options: optsCompare
+        }
+      );
+    }
+  </script>
+</body>
+</html>

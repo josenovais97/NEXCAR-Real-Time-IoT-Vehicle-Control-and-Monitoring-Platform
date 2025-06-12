@@ -1,0 +1,334 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏎️ NEXCAR 🏎️ - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; background: linear-gradient(135deg, #f4f4f9, #e0e5ec); color: #333; transition: background 0.3s, color 0.3s; }
+    body.dark-mode { background: #2c2c2c; color: #ddd; }
+    header { background: linear-gradient(135deg, #007bff, #00aaff); color: white; padding: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; transition: background 0.3s; }
+    body.dark-mode header { background: #444; }
+    header h1 { margin: 0; font-size: 2.5em; }
+    header .logout-btn, header .theme-btn {
+      position: absolute;
+      top: 20px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background 0.3s ease;
+      text-decoration: none;
+    }
+    header .logout-btn { right: 20px; }
+    header .theme-btn { right: 100px; }
+    header .logout-btn:hover, header .theme-btn:hover { background: rgba(255,255,255,0.4); }
+    .container { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; }
+    .card { background-color: white; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); margin: 15px; padding: 20px; width: 300px; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+    body.dark-mode .card { background-color: #3a3a3a; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15); }
+    .card h3 { margin-bottom: 15px; font-weight: 600; font-size: 1.2em; color: #007bff; }
+    body.dark-mode .card h3 { color: #66b0ff; }
+    .card canvas { width: 100%; height: 200px; }
+    .btn-container { display: flex; justify-content: center; margin: 20px; gap: 15px; }
+    .btn { background: linear-gradient(135deg, #007bff, #00aaff); color: white; padding: 10px 25px; border: none; border-radius: 50px; cursor: pointer; font-size: 1em; transition: background 0.3s ease; }
+    .btn:hover { background: linear-gradient(135deg, #0056b3, #007bff); }
+    footer { background-color: #333; color: white; padding: 10px; text-align: center; position: fixed; width: 100%; bottom: 0; font-size: 0.9em; }
+    @media (max-width: 768px) { .container { flex-direction: column; align-items: center; } .card { width: 90%; } }
+    /* Modal Styles */
+    .modal {
+      display: none; 
+      position: fixed; 
+      z-index: 10; 
+      left: 0; 
+      top: 0; 
+      width: 100%; 
+      height: 100%; 
+      overflow: auto; 
+      background-color: rgba(0,0,0,0.4);
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-content {
+      background-color: #fefefe; 
+      margin: 10% auto; 
+      padding: 20px; 
+      border: 1px solid #888; 
+      width: 80%; 
+      max-width: 500px;
+      border-radius: 10px;
+    }
+    body.dark-mode .modal-content { background-color: #555; color: #ddd; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+    .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏎️ NEXCAR - Monitoramento de Sensores</h1>
+    <a class="logout-btn" href="/logout">Logout</a>
+    <button class="theme-btn" id="toggleTheme">☀️</button>
+  </header>
+
+  <div class="container">
+    <div class="card" id="card-temp">
+      <h3>🌡️ Temperatura</h3>
+      <canvas id="tempChart"></canvas>
+    </div>
+    <div class="card" id="card-humidity">
+      <h3>💦 Humidade</h3>
+      <canvas id="humidityChart"></canvas>
+    </div>
+    <div class="card" id="card-fire">
+      <h3>🔥 Fogo</h3>
+      <canvas id="fireChart"></canvas>
+    </div>
+    <div class="card" id="card-accelerometer">
+      <h3>⚡ Acelerômetro</h3>
+      <canvas id="accelerometerChart"></canvas>
+    </div>
+    <div class="card" id="card-rain">
+      <h3>🌧️ Chuva</h3>
+      <canvas id="rainChart"></canvas>
+    </div>
+    <div class="card" id="card-distance">
+      <h3>📏 Distância</h3>
+      <canvas id="distanceChart"></canvas>
+    </div>
+    <div class="card" id="card-movement">
+      <h3>🏃 Movimento</h3>
+      <canvas id="movementChart"></canvas>
+    </div>
+  </div>
+
+  <div class="btn-container">
+    <button class="btn" onclick="clearAllCharts()">Limpar Dados</button>
+    <a class="btn" href="/download_data">Download CSV</a>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 🏎️ NEXCAR - Todos os direitos reservados.</p>
+  </footer>
+
+  <!-- Modal para estatísticas -->
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="modalClose">&times;</span>
+      <h2 id="statsTitle"></h2>
+      <div id="statsContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Dark mode toggle
+    document.getElementById('toggleTheme').addEventListener('click', function() {
+      document.body.classList.toggle('dark-mode');
+      this.textContent = document.body.classList.contains('dark-mode') ? '🌙' : '☀️';
+    });
+
+    // Adiciona os event listeners para fechar o modal
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById('modalClose').addEventListener('click', function() {
+        document.getElementById('statsModal').style.display = 'none';
+      });
+      window.addEventListener('click', function(event) {
+        if (event.target == document.getElementById('statsModal')) {
+          document.getElementById('statsModal').style.display = 'none';
+        }
+      });
+    });
+
+    // Variáveis globais para armazenar os dados dos sensores e o dataset completo
+    let sensorTempData = [];
+    let sensorHumidityData = [];
+    let sensorFireData = [];
+    let sensorAccelerometerData = [];
+    let sensorRainData = [];
+    let sensorDistanceData = [];
+    let sensorMovementData = [];
+    let sensorDataFull = [];
+
+    function createChart(ctx, labels, data, label, chartType = 'line') {
+      return new Chart(ctx, {
+        type: chartType,
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: false,
+            tension: 0.3,
+            pointRadius: 3,
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+            x: { grid: { color: 'rgba(0, 0, 0, 0.05)' } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    let tempChart, humidityChart, fireChart, accelerometerChart, rainChart, distanceChart, movementChart;
+
+    // Função de estatísticas personalizada para cada sensor
+    function showStats(sensorName, dataArray) {
+      let statsHTML = "";
+      // Para sensores com valores contínuos (Temperatura, Humidade, Distância)
+      if(sensorName.includes("Temperatura") || sensorName.includes("Humidade") || sensorName.includes("Distância")) {
+        if(dataArray.length === 0) {
+          statsHTML = `<p>Sem dados para exibir estatísticas.</p>`;
+        } else {
+          let sum = dataArray.reduce((acc, val) => acc + val, 0);
+          let avg = (sum / dataArray.length).toFixed(2);
+          let min = Math.min(...dataArray);
+          let max = Math.max(...dataArray);
+          statsHTML = `<p><strong>Média:</strong> ${avg}</p>
+                       <p><strong>Valor Mínimo:</strong> ${min}</p>
+                       <p><strong>Valor Máximo:</strong> ${max}</p>
+                       <p><strong>Total de Registos:</strong> ${dataArray.length}</p>`;
+        }
+      }
+      // Para Fogo: mostra o último evento de fogo (valor 1)
+      else if(sensorName.includes("Fogo")) {
+        let fires = sensorDataFull.filter(item => item.fire == 1);
+        if(fires.length > 0) {
+          let lastFire = fires.reduce((a, b) => new Date(a.time) > new Date(b.time) ? a : b);
+          statsHTML = `<p><strong>Último evento de fogo:</strong> ${new Date(lastFire.time).toLocaleString()}</p>`;
+        } else {
+          statsHTML = `<p><strong>Último evento de fogo:</strong> Nenhum registrado.</p>`;
+        }
+      }
+      // Para Acelerômetro: mostra a última colisão (valor 1)
+      else if(sensorName.includes("Acelerômetro")) {
+        let collisions = sensorDataFull.filter(item => item.accelerometer == 1);
+        if(collisions.length > 0) {
+          let lastCollision = collisions.reduce((a, b) => new Date(a.time) > new Date(b.time) ? a : b);
+          statsHTML = `<p><strong>Última colisão:</strong> ${new Date(lastCollision.time).toLocaleString()}</p>`;
+        } else {
+          statsHTML = `<p><strong>Última colisão:</strong> Nenhuma registrada.</p>`;
+        }
+      }
+      // Para Movimento: mostra o último movimento (valor 1)
+      else if(sensorName.includes("Movimento")) {
+        let movements = sensorDataFull.filter(item => item.movement == 1);
+        if(movements.length > 0) {
+          let lastMovement = movements.reduce((a, b) => new Date(a.time) > new Date(b.time) ? a : b);
+          statsHTML = `<p><strong>Último movimento detectado:</strong> ${new Date(lastMovement.time).toLocaleString()}</p>`;
+        } else {
+          statsHTML = `<p><strong>Último movimento detectado:</strong> Nenhum registrado.</p>`;
+        }
+      }
+      // Para Chuva: mostra total de eventos e a data do último evento
+      else if(sensorName.includes("Chuva")) {
+        let rains = sensorDataFull.filter(item => item.rain == 1);
+        if(rains.length > 0) {
+          let lastRain = rains.reduce((a, b) => new Date(a.time) > new Date(b.time) ? a : b);
+          statsHTML = `<p><strong>Total de eventos de chuva:</strong> ${rains.length}</p>
+                       <p><strong>Último evento de chuva:</strong> ${new Date(lastRain.time).toLocaleString()}</p>`;
+        } else {
+          statsHTML = `<p><strong>Eventos de chuva:</strong> Nenhum registrado.</p>`;
+        }
+      }
+      else {
+        statsHTML = `<p>Sem dados para exibir estatísticas.</p>`;
+      }
+      document.getElementById('statsTitle').textContent = sensorName;
+      document.getElementById('statsContent').innerHTML = statsHTML;
+      document.getElementById('statsModal').style.display = 'block';
+    }
+
+    // Atualiza os dados dos sensores e cria/atualiza os gráficos
+    function updateData() {
+      fetch('/dados')
+        .then(response => response.json())
+        .then(data => {
+          // Armazena o dataset completo para uso nas estatísticas
+          sensorDataFull = data;
+          const labels = data.map(item => new Date(item.time).toLocaleTimeString());
+          sensorTempData = data.map(item => item.temperature);
+          sensorHumidityData = data.map(item => item.humidity);
+          sensorFireData = data.map(item => item.fire);
+          sensorAccelerometerData = data.map(item => item.accelerometer);
+          sensorRainData = data.map(item => item.rain);
+          sensorDistanceData = data.map(item => item.distance);
+          sensorMovementData = data.map(item => item.movement);
+
+          if (!tempChart) {
+            tempChart = createChart(document.getElementById('tempChart').getContext('2d'), labels, sensorTempData, 'Temperatura');
+            humidityChart = createChart(document.getElementById('humidityChart').getContext('2d'), labels, sensorHumidityData, 'Humidade');
+            fireChart = createChart(document.getElementById('fireChart').getContext('2d'), labels, sensorFireData, 'Fogo');
+            accelerometerChart = createChart(document.getElementById('accelerometerChart').getContext('2d'), labels, sensorAccelerometerData, 'Acelerômetro');
+            rainChart = createChart(document.getElementById('rainChart').getContext('2d'), labels, sensorRainData, 'Chuva');
+            distanceChart = createChart(document.getElementById('distanceChart').getContext('2d'), labels, sensorDistanceData, 'Distância');
+            movementChart = createChart(document.getElementById('movementChart').getContext('2d'), labels, sensorMovementData, 'Movimento');
+          } else {
+            tempChart.data.labels = labels;
+            tempChart.data.datasets[0].data = sensorTempData;
+            tempChart.update();
+
+            humidityChart.data.labels = labels;
+            humidityChart.data.datasets[0].data = sensorHumidityData;
+            humidityChart.update();
+
+            fireChart.data.labels = labels;
+            fireChart.data.datasets[0].data = sensorFireData;
+            fireChart.update();
+
+            accelerometerChart.data.labels = labels;
+            accelerometerChart.data.datasets[0].data = sensorAccelerometerData;
+            accelerometerChart.update();
+
+            rainChart.data.labels = labels;
+            rainChart.data.datasets[0].data = sensorRainData;
+            rainChart.update();
+
+            distanceChart.data.labels = labels;
+            distanceChart.data.datasets[0].data = sensorDistanceData;
+            distanceChart.update();
+
+            movementChart.data.labels = labels;
+            movementChart.data.datasets[0].data = sensorMovementData;
+            movementChart.update();
+          }
+        })
+        .catch(error => console.error('Erro ao carregar os dados:', error));
+    }
+
+    // Definir ações para clique nos cards
+    document.getElementById('card-temp').onclick = function() { showStats("🌡️ Temperatura", sensorTempData); }
+    document.getElementById('card-humidity').onclick = function() { showStats("💦 Humidade", sensorHumidityData); }
+    document.getElementById('card-fire').onclick = function() { showStats("🔥 Fogo", sensorFireData); }
+    document.getElementById('card-accelerometer').onclick = function() { showStats("⚡ Acelerômetro", sensorAccelerometerData); }
+    document.getElementById('card-rain').onclick = function() { showStats("🌧️ Chuva", sensorRainData); }
+    document.getElementById('card-distance').onclick = function() { showStats("📏 Distância", sensorDistanceData); }
+    document.getElementById('card-movement').onclick = function() { showStats("🏃 Movimento", sensorMovementData); }
+
+    // Função para limpar os dados dos gráficos
+    function clearAllCharts() {
+      if (tempChart) { tempChart.data.labels = []; tempChart.data.datasets[0].data = []; tempChart.update(); }
+      if (humidityChart) { humidityChart.data.labels = []; humidityChart.data.datasets[0].data = []; humidityChart.update(); }
+      if (fireChart) { fireChart.data.labels = []; fireChart.data.datasets[0].data = []; fireChart.update(); }
+      if (accelerometerChart) { accelerometerChart.data.labels = []; accelerometerChart.data.datasets[0].data = []; accelerometerChart.update(); }
+      if (rainChart) { rainChart.data.labels = []; rainChart.data.datasets[0].data = []; rainChart.update(); }
+      if (distanceChart) { distanceChart.data.labels = []; distanceChart.data.datasets[0].data = []; distanceChart.update(); }
+      if (movementChart) { movementChart.data.labels = []; movementChart.data.datasets[0].data = []; movementChart.update(); }
+    }
+
+    setInterval(updateData, 5000);
+    updateData();
+  </script>
+</body>
+</html>

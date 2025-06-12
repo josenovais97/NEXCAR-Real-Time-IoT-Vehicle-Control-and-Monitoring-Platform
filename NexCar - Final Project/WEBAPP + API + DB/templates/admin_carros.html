@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Carros de Clientes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #f4f4f9; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+    header { background: linear-gradient(135deg,#007bff,#00aaff); color: #fff; padding: 20px; text-align: center; position: relative; }
+    header h1 { font-size: 2.2rem; margin: 0; }
+    .logout-btn { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; border-radius: 5px; padding: 8px 12px; color: #fff; cursor: pointer; }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); }
+
+    .container { flex: 1; padding: 20px; max-width: 1000px; margin: 0 auto; }
+    .filter-wrapper { margin-bottom: 20px; display: flex; align-items: center; }
+    .filter-wrapper label { margin-right: 10px; font-weight: 600; }
+    .filter-wrapper input { flex: 1; padding: 10px 15px; border: 1px solid #ccc; border-radius: 25px; font-size: 1rem; }
+
+    table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    thead th { background: #007bff; color: #fff; padding: 12px 15px; border: none; font-weight: 600; border-radius: 8px 8px 0 0; }
+    tbody tr { background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); transition: transform .2s; }
+    tbody tr:hover { transform: translateY(-3px); }
+    td { padding: 12px 15px; }
+    .action-btn, .remove-btn { padding: 6px 12px; border: none; border-radius: 20px; font-size: .9rem; cursor: pointer; margin-right: 5px; }
+    .action-btn { background: linear-gradient(135deg,#007bff,#00aaff); color: #fff; }
+    .remove-btn { background: linear-gradient(135deg,#dc3545,#c82333); color: #fff; }
+    #noCarsMsg { text-align: center; margin-top: 2rem; color: #666; }
+
+    /* Chat Widget */
+    .chat-widget { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; }
+    .chat-toggle-btn { position: relative; background: linear-gradient(135deg,#007bff,#00aaff); color: #fff; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 28px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .notif-badge { position: absolute; top: -5px; right: -5px; background: #dc3545; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .chat-panel { width: 380px; max-height: 480px; background: #fff; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; margin-bottom: 10px; }
+    .chat-panel.hidden { display: none; }
+    .chat-header { background: #007bff; color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+    .chat-header h2 { margin: 0; font-size: 1.1rem; }
+    .chat-close-btn { cursor: pointer; font-size: 20px; }
+    .chat-search-wrapper { padding: 10px 15px; border-bottom: 1px solid #eee; }
+    .chat-search-wrapper input { width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 20px; font-size: 1rem; }
+    .chat-client-list { max-height: 120px; overflow-y: auto; }
+    .chat-client-list button { width: 100%; text-align: left; padding: 10px 15px; border: none; background: none; cursor: pointer; transition: background .2s; font-weight: 500; }
+    .chat-client-list button:hover, .chat-client-list .selected { background: #e0e7ff; }
+    .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #fcfcfc; display: flex; flex-direction: column; }
+    .bubble { max-width: 80%; margin: 8px 0; padding: 10px 15px; border-radius: 20px; line-height: 1.4; }
+    .bubble.question { background: #007bff; color: #fff; align-self: flex-end; border-bottom-right-radius: 5px; }
+    .bubble.answer { background: #e5e7eb; color: #333; align-self: flex-start; border-bottom-left-radius: 5px; }
+    .chat-footer { display: flex; border-top: 1px solid #ddd; }
+    .chat-footer input { flex: 1; border: none; padding: 12px 15px; font-size: 1rem; }
+    .chat-footer button { border: none; background: linear-gradient(135deg,#007bff,#00aaff); color: #fff; padding: 0 20px; font-size: 1rem; cursor: pointer; }
+
+    footer { background: #333; color: #fff; text-align: center; padding: 10px; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin – Carros de Clientes</h1>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </header>
+
+  <div class="container">
+    <div id="loader">⏳ A carregar…</div>
+    <div class="filter-wrapper">
+      <label for="clientFilter">Pesquisar Cliente:</label>
+      <input type="text" id="clientFilter" placeholder="Nome do cliente..." />
+    </div>
+    <h2>Lista de Carros</h2>
+    <table id="carsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Proprietário</th>
+          <th>Nome</th>
+          <th>Data Criação</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p id="noCarsMsg">Nenhum carro encontrado.</p>
+  </div>
+
+  <!-- Chat Widget for Admin -->
+  <div class="chat-widget">
+    <button class="chat-toggle-btn" id="chatToggle">
+      💬<span class="notif-badge hidden" id="notifBadge">0</span>
+    </button>
+    <div class="chat-panel hidden" id="chatPanel">
+      <div class="chat-header">
+        <h2>Chat Admin</h2>
+        <span class="chat-close-btn" id="chatClose">×</span>
+      </div>
+      <div class="chat-search-wrapper">
+        <input type="text" id="chatSearch" placeholder="Filtrar clientes..." />
+      </div>
+      <div class="chat-client-list" id="chatClientList"></div>
+      <div class="chat-body" id="chatBody"></div>
+      <div class="chat-footer">
+        <input id="chatInput" type="text" placeholder="Escrever resposta..." />
+        <button id="chatSend">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>&copy; 2025 🏎️ NEXCAR</footer>
+
+  <script type="module">
+    import { authHeader, requireAuth, clearToken } from '/static/js/auth.js';
+    document.addEventListener('DOMContentLoaded', () => {
+      requireAuth();
+      document.getElementById('logoutBtn').onclick = () => {
+        clearToken();
+        location.href = '/login';
+      };
+
+      // Carros
+      const loader = document.getElementById('loader'),
+            carsTable = document.getElementById('carsTable'),
+            noCarsMsg = document.getElementById('noCarsMsg'),
+            clientFilter = document.getElementById('clientFilter');
+      let allCars = [];
+      clientFilter.oninput = renderCars;
+      async function carregarCars() {
+        loader.style.display = '';
+        try {
+          allCars = await (await fetch('/api/v1/cars', { headers: authHeader() })).json();
+        } catch {
+          allCars = [];
+        }
+        loader.style.display = 'none';
+        renderCars();
+      }
+      function renderCars() {
+        const tbody = carsTable.tBodies[0];
+        tbody.innerHTML = '';
+        const term = clientFilter.value.trim().toLowerCase();
+        const filtered = allCars.filter(c => c.owner.toLowerCase().includes(term));
+        if (!filtered.length) {
+          carsTable.style.display = 'none';
+          noCarsMsg.style.display = 'block';
+        } else {
+          carsTable.style.display = '';
+          noCarsMsg.style.display = 'none';
+          filtered.forEach(car => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${car.id}</td>
+              <td>${car.owner}</td>
+              <td>${car.name}</td>
+              <td>${new Date(car.created_at).toLocaleString()}</td>
+              <td>
+                <a class="action-btn" href="/carro/${car.id}">Dashboard</a>
+                <button class="remove-btn" data-id="${car.id}">Remover</button>
+              </td>`;
+            tbody.appendChild(tr);
+          });
+          document.querySelectorAll('.remove-btn').forEach(b => {
+            b.onclick = async () => {
+              await fetch(`/api/v1/cars/${b.dataset.id}`, {
+                method: 'DELETE',
+                headers: authHeader()
+              });
+              carregarCars();
+            };
+          });
+        }
+      }
+      carregarCars();
+
+      // Chat Admin
+      const chatToggle     = document.getElementById('chatToggle'),
+            notifBadge     = document.getElementById('notifBadge'),
+            chatPanel      = document.getElementById('chatPanel'),
+            chatClose      = document.getElementById('chatClose'),
+            chatSearch     = document.getElementById('chatSearch'),
+            chatClientList = document.getElementById('chatClientList'),
+            chatBody       = document.getElementById('chatBody'),
+            chatInput      = document.getElementById('chatInput'),
+            chatSend       = document.getElementById('chatSend');
+      let questionsByUser = {}, currentUser = null;
+
+      async function loadQuestions() {
+        try {
+          const qs = await (await fetch('/api/v1/questions', { headers: authHeader() })).json();
+          questionsByUser = {};
+          let unread = 0;
+          qs.forEach(q => {
+            if (!questionsByUser[q.user_name]) questionsByUser[q.user_name] = [];
+            questionsByUser[q.user_name].push(q);
+            if (!q.response) unread++;
+          });
+          if (unread > 0) {
+            notifBadge.textContent = unread;
+            notifBadge.classList.remove('hidden');
+          } else {
+            notifBadge.classList.add('hidden');
+          }
+          renderClientList();
+        } catch {
+          chatClientList.innerHTML = '<p>Erro ao carregar clientes.</p>';
+        }
+      }
+
+      function renderClientList() {
+        chatClientList.innerHTML = '';
+        const filter = chatSearch.value.trim().toLowerCase();
+        const users = Object.keys(questionsByUser)
+                             .sort()
+                             .filter(u => u.toLowerCase().includes(filter));
+        users.forEach(user => {
+          const btn = document.createElement('button');
+          const hasUnread = questionsByUser[user].some(q => !q.response);
+          btn.textContent = user + (hasUnread ? ' 🔴' : '');
+          btn.onclick = () => selectUser(user);
+          if (user === currentUser) btn.classList.add('selected');
+          chatClientList.appendChild(btn);
+        });
+      }
+
+      function selectUser(user) {
+        currentUser = user;
+        renderClientList();
+        renderConversation();
+      }
+
+      function renderConversation() {
+        chatBody.innerHTML = '';
+        if (!currentUser) return;
+        const msgs = questionsByUser[currentUser] || [];
+        msgs
+          .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+          .forEach(m => {
+            const qd = document.createElement('div');
+            qd.className = 'bubble question';
+            qd.textContent = m.question;
+            chatBody.appendChild(qd);
+            if (m.response) {
+              const ad = document.createElement('div');
+              ad.className = 'bubble answer';
+              ad.textContent = m.response;
+              chatBody.appendChild(ad);
+            }
+          });
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+
+      chatToggle.onclick = () => {
+        chatPanel.classList.toggle('hidden');
+        if (!chatPanel.classList.contains('hidden')) loadQuestions();
+      };
+      chatClose.onclick = () => chatPanel.classList.add('hidden');
+      chatSearch.oninput = renderClientList;
+      chatSend.onclick = async () => {
+        const txt = chatInput.value.trim();
+        if (!txt || !currentUser) return;
+        const pending = [...questionsByUser[currentUser]]
+                          .reverse()
+                          .find(q => !q.response);
+        if (!pending) return;
+        await fetch(`/api/v1/questions/${pending.id}/response`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeader() },
+          body: JSON.stringify({ response: txt })
+        });
+        chatInput.value = '';
+        await loadQuestions();
+        selectUser(currentUser);
+      };
+    });
+  </script>
+</body>
+</html>

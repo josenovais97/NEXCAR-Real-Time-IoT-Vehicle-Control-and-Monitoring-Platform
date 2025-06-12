@@ -1,0 +1,155 @@
+
+<!-- templates/landing.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- Favicon (opcional) -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXCAR</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0; 
+      padding: 0; 
+      background: linear-gradient(135deg, #f4f4f9, #e0e5ec);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode {
+      background: #2c2c2c;
+      color: #ddd;
+    }
+    header {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      position: relative;
+      transition: background 0.3s;
+    }
+    body.dark-mode header {
+      background: #444;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5em;
+    }
+    header .theme-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background 0.3s;
+    }
+    header .theme-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+    .btn-container {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #007bff, #00aaff);
+      color: white;
+      padding: 10px 25px;
+      border: none;
+      border-radius: 50px;
+      text-decoration: none;
+      font-size: 1em;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: linear-gradient(135deg, #0056b3, #007bff);
+    }
+    footer {
+      background-color: #333;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-size: 0.9em;
+    }
+    /* Estilo opcional para redimensionar a imagem do logo */
+    .nexcar-logo {
+      max-width: 300px; /* Ajuste conforme desejar */
+      width: 100%;
+      height: auto;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏎️ NEXCAR 🏎️</h1>
+    <button class="theme-btn" id="toggleTheme">☀️</button>
+  </header>
+  <div class="container">
+    <!-- IMAGEM DO LOGO NO CENTRO -->
+    <img 
+      class="nexcar-logo"
+      src="{{ url_for('static', filename='img/nexcar.png') }}"
+      alt="NEXCAR Logo"
+    >
+    
+    <h2>Bem-vindo</h2>
+    <p>Faça login ou registe-se para aceder à sua dashboard.</p>
+    <div class="btn-container">
+      <a class="btn" href="{{ url_for('login_page') }}">Entrar</a>
+      <a class="btn" href="{{ url_for('register_page') }}">Registar</a>
+    </div>
+  </div>
+  <footer>
+    <p>&copy; 2025 🏎️ NEXCAR - Todos os direitos reservados.</p>
+  </footer>
+  <script type="module">
+    import { authHeader, requireAuth } from "/static/js/auth.js";
+
+    // Se já estiver autenticado, redireciona conforme o papel
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      (async () => {
+        try {
+          const me = await fetch("/api/v1/auth/me", { headers: authHeader() });
+          const user = await me.json();
+          if (user.role === "admin") {
+            location.href = "/admin_carros";
+          } else {
+            location.href = "/cliente_landing";
+          }
+        } catch { /* token inválido → fica aqui */ }
+      })();
+    }
+
+    document.getElementById("toggleTheme").onclick = function(){
+      document.body.classList.toggle("dark-mode");
+      this.textContent = document.body.classList.contains("dark-mode") ? "🌙" : "☀️";
+    };
+  </script>
+</body>
+</html>
