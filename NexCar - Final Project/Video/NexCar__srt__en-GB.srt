@@ -1,0 +1,200 @@
+1
+00:00:09,200 --> 00:00:11,100
+First we have a temperature sensor
+
+2
+00:00:11,167 --> 00:00:12,000
+which turns on the AC
+
+3
+00:00:12,067 --> 00:00:14,533
+as soon as the temperature rises.
+
+4
+00:00:15,167 --> 00:00:16,767
+Next we have a flame sensor
+
+5
+00:00:16,833 --> 00:00:18,700
+that alerts us in case of fire.
+
+6
+00:00:19,267 --> 00:00:20,900
+We also have a rear sensor
+
+7
+00:00:20,967 --> 00:00:22,900
+that detects when we're nearing an object
+
+8
+00:00:22,967 --> 00:00:23,867
+and triggers a buzzer.
+
+9
+00:00:28,333 --> 00:00:30,300
+Next, we have a rain sensor
+
+10
+00:00:30,367 --> 00:00:33,367
+that automatically activates
+the windshield wipers,
+
+11
+00:00:33,467 --> 00:00:34,067
+and finally
+
+12
+00:00:34,133 --> 00:00:36,567
+a light sensor that switches
+on the cars headlights
+
+13
+00:00:36,633 --> 00:00:38,100
+when it detects darkness.
+
+14
+00:00:38,167 --> 00:00:42,333
+All of this data is collected
+and sampled in real time.
+
+15
+00:00:42,500 --> 00:00:44,300
+Moving on to our web platform,
+
+16
+00:00:44,467 --> 00:00:46,367
+customers log in to a home page
+
+17
+00:00:46,433 --> 00:00:47,600
+that greets them and presents
+
+18
+00:00:47,667 --> 00:00:49,467
+a map of the current location,
+
+19
+00:00:49,533 --> 00:00:51,200
+complete with live traffic data
+
+20
+00:00:51,267 --> 00:00:53,033
+and nearby fuel stations.
+
+21
+00:00:55,033 --> 00:00:58,433
+Customers can also submit
+any questions they may have.
+
+22
+00:00:58,800 --> 00:01:01,267
+And a site administrator
+will respond promptly.
+
+23
+00:01:03,067 --> 00:01:07,100
+They can also add vehicles
+to their fleet and view real time data
+
+24
+00:01:07,167 --> 00:01:08,133
+along with insightful
+
+25
+00:01:08,200 --> 00:01:10,633
+statistics while filtering
+that information
+
+26
+00:01:10,700 --> 00:01:12,533
+for any time period they choose.
+
+27
+00:01:31,100 --> 00:01:34,133
+Administrators can view
+every vehicle in the system,
+
+28
+00:01:34,200 --> 00:01:36,333
+delete cars and filter
+records
+
+29
+00:01:36,400 --> 00:01:37,667
+by customer name.
+
+30
+00:01:38,000 --> 00:01:41,200
+They also receive
+and handle customer enquiries.
+
+31
+00:01:51,600 --> 00:01:55,033
+Another feature available
+to both customers and administrators
+
+32
+00:01:55,100 --> 00:01:57,000
+is vehicle data comparison.
+
+33
+00:01:57,100 --> 00:01:59,767
+Customers can compare only their own cars,
+
+34
+00:01:59,867 --> 00:02:02,067
+whereas the admin can select
+any car in the
+
+35
+00:02:02,167 --> 00:02:03,533
+system for comparison.
+
+36
+00:02:08,233 --> 00:02:10,133
+We've also developed a mobile app
+
+37
+00:02:10,200 --> 00:02:12,933
+that mirrors all the features
+of the web interface.
+
+38
+00:02:13,300 --> 00:02:15,867
+It adds extra convenience
+for our customers
+
+39
+00:02:15,933 --> 00:02:17,667
+and delivers push notifications
+
+40
+00:02:17,767 --> 00:02:18,067
+whenever
+
+41
+00:02:18,133 --> 00:02:20,400
+the in vehicle sensors detect fire,
+
+42
+00:02:20,500 --> 00:02:23,333
+a collision or interior movement
+that could signal
+
+43
+00:02:23,400 --> 00:02:24,267
+a theft attempt.
+
+44
+00:02:24,700 --> 00:02:26,667
+The alerts rely on the flame sensor,
+
+45
+00:02:26,767 --> 00:02:30,133
+accelerometer and motion sensor
+installed in each
+
+46
+00:02:30,200 --> 00:02:30,367
+car.
+
